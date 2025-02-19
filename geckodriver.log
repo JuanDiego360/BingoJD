@@ -1,0 +1,17 @@
+1739912086638	geckodriver	INFO	Listening on 127.0.0.1:42401
+1739912087411	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr ... ed" "--remote-debugging-port" "55307" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile8A0dr5"
+Gtk-Message: 15:54:47.681: Failed to load module "xapp-gtk3-module"
+Gtk-Message: 15:54:47.682: Not loading module "atk-bridge": The functionality is provided by GTK natively. Please try to not load it.
+[55126, Main Thread] WARNING: GTK+ module /snap/firefox/5783/gnome-platform/usr/lib/gtk-2.0/modules/libcanberra-gtk-module.so cannot be loaded.
+GTK+ 2.x symbols detected. Using GTK+ 2.x and GTK+ 3 in the same process is not supported.: 'glib warning', file /build/firefox/parts/firefox/build/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox_firefox:55126): Gtk-WARNING **: 15:54:47.783: GTK+ module /snap/firefox/5783/gnome-platform/usr/lib/gtk-2.0/modules/libcanberra-gtk-module.so cannot be loaded.
+GTK+ 2.x symbols detected. Using GTK+ 2.x and GTK+ 3 in the same process is not supported.
+Gtk-Message: 15:54:47.783: Failed to load module "canberra-gtk-module"
+[55126, Main Thread] WARNING: GTK+ module /snap/firefox/5783/gnome-platform/usr/lib/gtk-2.0/modules/libcanberra-gtk-module.so cannot be loaded.
+GTK+ 2.x symbols detected. Using GTK+ 2.x and GTK+ 3 in the same process is not supported.: 'glib warning', file /build/firefox/parts/firefox/build/toolkit/xre/nsSigHandlers.cpp:201
+
+(firefox_firefox:55126): Gtk-WARNING **: 15:54:47.785: GTK+ module /snap/firefox/5783/gnome-platform/usr/lib/gtk-2.0/modules/libcanberra-gtk-module.so cannot be loaded.
+GTK+ 2.x symbols detected. Using GTK+ 2.x and GTK+ 3 in the same process is not supported.
+Gtk-Message: 15:54:47.785: Failed to load module "canberra-gtk-module"
+ATTENTION: default value of option mesa_glthread overridden by environment.
