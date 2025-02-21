@@ -34,10 +34,13 @@ env/
 
 # Archivos generados por la aplicación
 cartones/*.md
+cuentas_familia/
 cartonesjugando.md
+comprobar_carton.md
 estado_envio.json
 datos_bingo.json
 
 # Otros
 .DS_Store
 Thumbs.db
+PyWhatKit_DB.txt
