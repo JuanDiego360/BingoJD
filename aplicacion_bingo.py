@@ -281,7 +281,6 @@ class BingoApp:
                         # Marcar como enviado
                         estado_envio[carton_id] = "✅"
                         mensajes_enviados += 1
-                        messagebox.showinfo("Éxito", f"Cartón {carton_id} enviado exitosamente")
                     else:
                         errores.append(f"No se pudo enviar el cartón {carton_id}")
                 except Exception as e:
