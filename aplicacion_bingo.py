@@ -266,9 +266,15 @@ class BingoApp:
             # Enviar cartones no enviados
             mensajes_enviados = 0
             errores = []
+            total_cartones = len(cartones_no_enviados)
             
-            for carton_id in cartones_no_enviados:
+            print(f"\nIniciando envío de {total_cartones} cartones...")
+            
+            for i, carton_id in enumerate(cartones_no_enviados):
                 try:
+                    # Mostrar progreso en la terminal
+                    print(f"Enviando cartón {i+1}/{total_cartones}: {carton_id}")
+                    
                     # Obtener número de teléfono del jugador
                     telefono = datos_jugadores[carton_id]
                     
@@ -281,10 +287,13 @@ class BingoApp:
                         # Marcar como enviado
                         estado_envio[carton_id] = "✅"
                         mensajes_enviados += 1
+                        print(f"✅ Cartón {carton_id} enviado exitosamente ({i+1}/{total_cartones})")
                     else:
                         errores.append(f"No se pudo enviar el cartón {carton_id}")
+                        print(f"❌ Error al enviar cartón {carton_id} ({i+1}/{total_cartones})")
                 except Exception as e:
                     errores.append(f"Error al enviar cartón {carton_id}: {str(e)}")
+                    print(f"❌ Error al enviar cartón {carton_id} ({i+1}/{total_cartones}): {str(e)}")
             
             # Guardar estado de envío actualizado
             with open('estado_envio.json', 'w', encoding='utf-8') as f:
@@ -293,6 +302,17 @@ class BingoApp:
             # Actualizar la lista de comprobación
             from comprobar_carton import generar_lista_comprobacion
             generar_lista_comprobacion()
+            
+            # Mostrar resumen en la terminal
+            print(f"\n===== RESUMEN DE ENVÍO =====")
+            print(f"Total de cartones: {total_cartones}")
+            print(f"Cartones enviados: {mensajes_enviados}")
+            print(f"Cartones con error: {len(errores)}")
+            if errores:
+                print("\nErrores encontrados:")
+                for error in errores:
+                    print(f"- {error}")
+            print("============================\n")
             
             # Mostrar resumen final
             if mensajes_enviados > 0:
