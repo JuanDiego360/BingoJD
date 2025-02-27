@@ -186,7 +186,8 @@ class BingoApp:
             ('Ver Jugadores', self.ver_cartones),
             ('Generar Cartones', self.generate_cards),
             ('Enviar Cartones', self.send_cards),
-            ('Jugar Bingo', self.play_bingo)
+            ('Jugar Bingo', self.play_bingo),
+            ('Borrar Todo', self.borrar_todo)
         ]
 
         for text, command in buttons:
@@ -379,6 +380,33 @@ class BingoApp:
         print("\nJugadores registrados:")
         for clave, telefono in cartones.items():
             print(f"Clave: {clave} -> Teléfono: {telefono}")
+
+    def borrar_todo(self):
+        """
+        Borra todos los archivos en el directorio cartones y limpia los archivos de datos
+        datos_bingo.json y estado_envio.json
+        """
+        # Confirmar antes de borrar
+        if messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los datos?\n\nEsta acción eliminará:\n1. Todos los cartones generados\n2. Todos los jugadores registrados\n3. El estado de envío de cartones\n\nEsta acción no se puede deshacer."):
+            try:
+                # 1. Borrar todos los archivos en el directorio cartones
+                cartones_dir = '/home/juandiego/Documentos/bingo/cartones'
+                for archivo in os.listdir(cartones_dir):
+                    ruta_archivo = os.path.join(cartones_dir, archivo)
+                    if os.path.isfile(ruta_archivo):
+                        os.remove(ruta_archivo)
+                
+                # 2. Limpiar datos_bingo.json (crear un archivo vacío con un diccionario)
+                with open('/home/juandiego/Documentos/bingo/datos_bingo.json', 'w', encoding='utf-8') as f:
+                    json.dump({}, f, ensure_ascii=False, indent=4)
+                
+                # 3. Limpiar estado_envio.json (crear un archivo vacío con un diccionario)
+                with open('/home/juandiego/Documentos/bingo/estado_envio.json', 'w', encoding='utf-8') as f:
+                    json.dump({}, f, ensure_ascii=False, indent=4)
+                
+                messagebox.showinfo("Éxito", "Todos los datos han sido borrados correctamente")
+            except Exception as e:
+                messagebox.showerror("Error", f"Ocurrió un error al borrar los datos: {str(e)}")
 
 class VentanaSeleccionCarton(tk.Toplevel):
     def __init__(self, parent):
@@ -776,7 +804,6 @@ class VentanaJuegoBingo(tk.Toplevel):
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Error al reiniciar el juego: {e}")
-
 
 
 if __name__ == '__main__':
