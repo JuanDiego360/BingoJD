@@ -35,11 +35,16 @@ env/
 # Archivos generados por la aplicación
 cartones/*.md
 cartones/*.png
+cartones/*.zip
+cartones/imagenes_de_los_cartones/*.png
 cuentas_familia/
 cartonesjugando.md
+# Temporalmente comentado para permitir acceso al archivo
 comprobar_carton.md
 estado_envio.json
 datos_bingo.json
+estado_imagenes.json
+imagenes_recientes.json
 
 # Otros
 .DS_Store

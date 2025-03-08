@@ -153,6 +153,33 @@ class VentanaEliminarJugador(tk.Toplevel):
                 pass
             except Exception as e:
                 print(f"Error al actualizar estado_envio.json: {str(e)}")
+                
+            # Eliminar registro en estado_imagenes.json si existe
+            try:
+                with open('estado_imagenes.json', 'r', encoding='utf-8') as f:
+                    estado_imagenes = json.load(f)
+                
+                # Eliminar el registro si existe
+                if clave_jugador in estado_imagenes:
+                    del estado_imagenes[clave_jugador]
+                    
+                    # Guardar el archivo actualizado
+                    with open('estado_imagenes.json', 'w', encoding='utf-8') as f:
+                        json.dump(estado_imagenes, f, indent=4)
+            except FileNotFoundError:
+                # Si el archivo no existe, no hay problema
+                pass
+            except Exception as e:
+                print(f"Error al actualizar estado_imagenes.json: {str(e)}")
+                
+            # Eliminar la imagen del cartón si existe
+            try:
+                imagen_path = f"/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones/{clave_jugador}.png"
+                if os.path.exists(imagen_path):
+                    os.remove(imagen_path)
+                    print(f"Imagen del cartón eliminada: {imagen_path}")
+            except Exception as e:
+                print(f"Error al eliminar la imagen del cartón: {str(e)}")
             
             self.lista_jugadores.delete(seleccion[0])
             messagebox.showinfo("Éxito", mensaje)
@@ -242,6 +269,31 @@ class BingoApp:
         if not md_files:
             messagebox.showerror("Error", "No hay cartones en formato markdown para convertir.")
             return
+            
+        # Verificar cuántos cartones necesitan generar imágenes
+        try:
+            with open('estado_imagenes.json', 'r', encoding='utf-8') as f:
+                estado_imagenes = json.load(f)
+        except FileNotFoundError:
+            estado_imagenes = {}
+            
+        # Contar cartones pendientes
+        pendientes = sum(1 for md_file in md_files if md_file[:-3] not in estado_imagenes or 
+                        estado_imagenes[md_file[:-3]] == "x")
+        
+        if pendientes == 0:
+            # Todos los cartones ya tienen imágenes generadas
+            if messagebox.askyesno("Información", 
+                                "Todos los cartones ya tienen imágenes generadas.\n\n" +
+                                "¿Deseas comprimir las imágenes existentes en un archivo ZIP?"):
+                self.comprimir_imagenes(cartones_dir)
+            return
+        
+        # Mostrar cuántos cartones se procesarán
+        if not messagebox.askyesno("Confirmación", 
+                               f"Se generarán imágenes para {pendientes} cartones que aún no las tienen.\n\n" +
+                               "¿Deseas continuar?"):
+            return
         
         # Ejecutar el script convertidor_imag.py
         try:
@@ -249,15 +301,15 @@ class BingoApp:
                                  capture_output=True, text=True, check=True)
             
             # Verificar la salida del script para determinar si fue exitoso
-            if "exitosamente" in result.stdout:
+            if "procesarán" in result.stdout:
                 # Crear una ventana de diálogo para preguntar si se desean comprimir las imágenes
                 if messagebox.askyesno("Conversión Exitosa", 
-                                    "Los cartones han sido convertidos a imágenes exitosamente.\n\n" +
+                                    result.stdout + "\n\n" +
                                     "¿Deseas comprimir todas estas imágenes en un archivo ZIP?"):
                     # Comprimir las imágenes en un archivo ZIP
                     self.comprimir_imagenes(cartones_dir)
             else:
-                messagebox.showinfo("Resultado", "Proceso completado. Revisa la terminal para más detalles.")
+                messagebox.showinfo("Resultado", result.stdout + "\n\nProceso completado. Revisa la terminal para más detalles.")
                 
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"Error al convertir cartones: {str(e)}\n\nSalida de error: {e.stderr}")
@@ -266,35 +318,47 @@ class BingoApp:
         # Obtener la fecha actual para el nombre del archivo
         fecha_actual = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Crear nombre del archivo ZIP
+        # Directorio donde se encuentran las imágenes
+        imagenes_dir = '/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones'
+        
+        # Crear nombre del archivo ZIP en el directorio de cartones
         zip_filename = f"{cartones_dir}/cartones_img_{fecha_actual}.zip"
         
-        # Lista para almacenar los archivos PNG
-        png_files = [f for f in os.listdir(cartones_dir) if f.endswith('.png')]
-        
-        if not png_files:
-            messagebox.showerror("Error", "No se encontraron imágenes PNG para comprimir.")
+        # Intentar cargar la lista de imágenes recientes
+        try:
+            with open('imagenes_recientes.json', 'r', encoding='utf-8') as f:
+                imagenes_recientes = json.load(f)
+                if not imagenes_recientes:
+                    messagebox.showerror("Error", "No hay imágenes recientes para comprimir.")
+                    return
+        except FileNotFoundError:
+            messagebox.showerror("Error", "No se encontró el archivo de imágenes recientes.")
+            return
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al cargar imágenes recientes: {str(e)}")
             return
         
         try:
-            # Crear archivo ZIP
+            # Verificar que las imágenes recientes existan
+            imagenes_existentes = []
+            for img_name in imagenes_recientes:
+                img_path = os.path.join(imagenes_dir, img_name)
+                if os.path.exists(img_path):
+                    imagenes_existentes.append((img_name, img_path))
+            
+            if not imagenes_existentes:
+                messagebox.showerror("Error", "No se encontraron las imágenes recientes en el directorio.")
+                return
+                
+            # Crear archivo ZIP solo con las imágenes recientes
             with zipfile.ZipFile(zip_filename, 'w') as zipf:
-                for png_file in png_files:
-                    png_path = os.path.join(cartones_dir, png_file)
-                    zipf.write(png_path, arcname=png_file)
+                for img_name, img_path in imagenes_existentes:
+                    zipf.write(img_path, arcname=img_name)
             
-            # Preguntar si se desean eliminar las imágenes originales
-            if messagebox.askyesno("Compresión Exitosa", 
-                                "Las imágenes han sido comprimidas exitosamente.\n\n" +
-                                f"Archivo creado: {zip_filename}\n\n" +
-                                "¿Deseas eliminar las imágenes PNG originales?"):
-                # Eliminar las imágenes originales
-                for png_file in png_files:
-                    png_path = os.path.join(cartones_dir, png_file)
-                    os.remove(png_path)
-                messagebox.showinfo("Completado", "Las imágenes originales han sido eliminadas.")
-            
-            messagebox.showinfo("Éxito", f"Proceso completado. Archivo ZIP creado: {zip_filename}")
+            # Mostrar mensaje de éxito
+            messagebox.showinfo("Compresión Exitosa", 
+                            f"Se han comprimido {len(imagenes_existentes)} imágenes recientes exitosamente.\n\n" +
+                            f"Archivo creado: {zip_filename}")
             
         except Exception as e:
             messagebox.showerror("Error", f"Error al comprimir las imágenes: {str(e)}")
@@ -470,28 +534,61 @@ class BingoApp:
 
     def borrar_todo(self):
         """
-        Borra todos los archivos en el directorio cartones y limpia los archivos de datos
-        datos_bingo.json y estado_envio.json
+        Borra todos los archivos en el directorio cartones, las imágenes generadas,
+        los archivos ZIP y limpia los archivos de datos y estados
         """
         # Confirmar antes de borrar
-        if messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los datos?\n\nEsta acción eliminará:\n1. Todos los cartones generados\n2. Todos los jugadores registrados\n3. El estado de envío de cartones\n\nEsta acción no se puede deshacer."):
+        if messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los datos?\n\nEsta acción eliminará:\n1. Todos los cartones generados\n2. Todas las imágenes de cartones\n3. Todos los archivos ZIP\n4. Todos los jugadores registrados\n5. El estado de envío y generación de imágenes\n\nEsta acción no se puede deshacer."):
             try:
-                # 1. Borrar todos los archivos en el directorio cartones
+                # 1. Borrar todos los archivos en el directorio cartones (excepto directorios)
                 cartones_dir = '/home/juandiego/Documentos/bingo/cartones'
                 for archivo in os.listdir(cartones_dir):
                     ruta_archivo = os.path.join(cartones_dir, archivo)
                     if os.path.isfile(ruta_archivo):
                         os.remove(ruta_archivo)
+                        print(f"Archivo eliminado: {ruta_archivo}")
                 
-                # 2. Limpiar datos_bingo.json (crear un archivo vacío con un diccionario)
+                # 2. Borrar todas las imágenes de cartones (conservando el directorio)
+                imagenes_dir = '/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones'
+                try:
+                    # Crear el directorio si no existe
+                    if not os.path.exists(imagenes_dir):
+                        os.makedirs(imagenes_dir)
+                        print(f"Directorio creado: {imagenes_dir}")
+                    # Eliminar solo los archivos dentro del directorio
+                    elif os.path.exists(imagenes_dir) and os.path.isdir(imagenes_dir):
+                        for archivo in os.listdir(imagenes_dir):
+                            ruta_archivo = os.path.join(imagenes_dir, archivo)
+                            if os.path.isfile(ruta_archivo):
+                                os.remove(ruta_archivo)
+                                print(f"Imagen eliminada: {ruta_archivo}")
+                        print(f"Se conservó el directorio: {imagenes_dir}")
+                except Exception as e:
+                    print(f"Error al procesar directorio de imágenes: {str(e)}")
+                
+                # 3. Limpiar datos_bingo.json (crear un archivo vacío con un diccionario)
                 with open('/home/juandiego/Documentos/bingo/datos_bingo.json', 'w', encoding='utf-8') as f:
                     json.dump({}, f, ensure_ascii=False, indent=4)
                 
-                # 3. Limpiar estado_envio.json (crear un archivo vacío con un diccionario)
+                # 4. Limpiar estado_envio.json (crear un archivo vacío con un diccionario)
                 with open('/home/juandiego/Documentos/bingo/estado_envio.json', 'w', encoding='utf-8') as f:
                     json.dump({}, f, ensure_ascii=False, indent=4)
+                    
+                # 5. Limpiar estado_imagenes.json (crear un archivo vacío con un diccionario)
+                try:
+                    with open('/home/juandiego/Documentos/bingo/estado_imagenes.json', 'w', encoding='utf-8') as f:
+                        json.dump({}, f, ensure_ascii=False, indent=4)
+                except Exception as e:
+                    print(f"Error al limpiar estado_imagenes.json: {str(e)}")
+                    
+                # 6. Limpiar imagenes_recientes.json si existe
+                try:
+                    with open('/home/juandiego/Documentos/bingo/imagenes_recientes.json', 'w', encoding='utf-8') as f:
+                        json.dump([], f, indent=4)
+                except Exception as e:
+                    print(f"Error al limpiar imagenes_recientes.json: {str(e)}")
                 
-                messagebox.showinfo("Éxito", "Todos los datos han sido borrados correctamente")
+                messagebox.showinfo("Éxito", "Todos los datos han sido borrados correctamente.\nSe han eliminado todos los cartones, imágenes y archivos ZIP.")
             except Exception as e:
                 messagebox.showerror("Error", f"Ocurrió un error al borrar los datos: {str(e)}")
 

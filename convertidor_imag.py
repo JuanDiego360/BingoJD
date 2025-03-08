@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import datetime
 import numpy as np
+import json
 
 
 def extract_metadata(markdown_filename):
@@ -117,8 +118,80 @@ def render_table_with_metadata(header, rows, meta, output_file):
     plt.close()
 
 
+def cargar_estado_imagenes():
+    """Carga el estado de generación de imágenes de los cartones desde un archivo JSON."""
+    try:
+        with open('estado_imagenes.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Error al cargar estado de imágenes: {e}")
+        return {}
+        
+def cargar_estado_envio():
+    """Carga el estado de envío de los cartones desde un archivo JSON."""
+    try:
+        with open('estado_envio.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Error al cargar estado de envío: {e}")
+        return {}
+
+def guardar_estado_imagenes(estado):
+    """Guarda el estado de generación de imágenes de los cartones en un archivo JSON."""
+    try:
+        with open('estado_imagenes.json', 'w', encoding='utf-8') as f:
+            json.dump(estado, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error al guardar estado de imágenes: {e}")
+        return False
+        
+def guardar_estado_envio(estado):
+    """Guarda el estado de envío de los cartones en un archivo JSON."""
+    try:
+        with open('estado_envio.json', 'w', encoding='utf-8') as f:
+            json.dump(estado, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error al guardar estado de envío: {e}")
+        return False
+
+def actualizar_lista_comprobacion():
+    """Actualiza la lista de comprobación de cartones."""
+    try:
+        import subprocess
+        result = subprocess.run(["python", "/home/juandiego/Documentos/bingo/comprobar_carton.py"], 
+                             capture_output=True, text=True)
+        if "exitosamente" in result.stdout:
+            print("Lista de comprobación actualizada exitosamente.")
+            return True
+        else:
+            print(f"Error al actualizar la lista de comprobación: {result.stderr}")
+            return False
+    except Exception as e:
+        print(f"Error al ejecutar el script de comprobación: {e}")
+        return False
+
 def main():
     input_dir = '/home/juandiego/Documentos/bingo/cartones'
+    output_dir = '/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones'
+    
+    # Lista para almacenar las imágenes generadas en esta sesión
+    imagenes_generadas = []
+    
+    # Crear el directorio de salida si no existe
+    try:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            print(f"Directorio creado: {output_dir}")
+    except Exception as e:
+        print(f"Error al crear el directorio de salida: {e}")
+        return
+        
     try:
         files = [f for f in os.listdir(input_dir) if f.endswith('.md')]
     except Exception as e:
@@ -129,14 +202,38 @@ def main():
         print("No se encontraron archivos markdown en el directorio.")
         return
 
-    print(f"Se encontraron {len(files)} archivos markdown para procesar.")
+    # Cargar el estado actual de las imágenes y envío
+    estado_imagenes = cargar_estado_imagenes()
+    estado_envio = cargar_estado_envio()
+    
+    # Filtrar los archivos para procesar solo los que tienen 'x' en Estado_Imag
+    archivos_pendientes = []
+    for md_file in files:
+        carton_id = md_file[:-3]  # Quitar la extensión .md
+        if carton_id in estado_imagenes and estado_imagenes[carton_id] == "x" or carton_id not in estado_imagenes:
+            archivos_pendientes.append(md_file)
+    
+    if not archivos_pendientes:
+        print("No hay cartones pendientes de generar imágenes.")
+        return
+        
+    print(f"Se procesarán {len(archivos_pendientes)} cartones pendientes de generar imágenes.")
     
     # Contador para archivos procesados exitosamente
     successful = 0
     
-    # Procesar cada archivo markdown
-    for md_file in files:
+    # Archivo para registrar las imágenes generadas en esta sesión
+    try:
+        with open('imagenes_recientes.json', 'w', encoding='utf-8') as f:
+            json.dump([], f)  # Iniciar con lista vacía
+    except Exception as e:
+        print(f"Error al crear archivo de imágenes recientes: {e}")
+    
+    # Procesar solo los archivos pendientes
+    for md_file in archivos_pendientes:
         input_file = os.path.join(input_dir, md_file)
+        carton_id = md_file[:-3]  # Quitar la extensión .md
+        
         try:
             with open(input_file, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -150,12 +247,46 @@ def main():
             print(f"No se encontró una tabla válida en el archivo {md_file}.")
             continue
 
-        output_file = input_file.replace('.md', '.png')
+        # Usar el directorio de salida para las imágenes
+        output_file = os.path.join(output_dir, os.path.basename(input_file).replace('.md', '.png'))
         render_table_with_metadata(header, rows, meta, output_file)
+        
+        # Marcar como generado en el estado de imágenes
+        estado_imagenes[carton_id] = "✅"
+        
+        # Marcar como enviado en el estado de envío
+        estado_envio[carton_id] = "✅"
+        
+        # Agregar a la lista de imágenes generadas en esta sesión
+        imagenes_generadas.append(os.path.basename(output_file))
+        
         successful += 1
         print(f"Tabla convertida a imagen con metadatos: {output_file}")
     
-    print(f"\nProceso completado. {successful} de {len(files)} archivos fueron convertidos exitosamente.")
+    # Guardar el estado actualizado de imágenes
+    if guardar_estado_imagenes(estado_imagenes):
+        print("Estado de generación de imágenes actualizado exitosamente.")
+    else:
+        print("Error al guardar el estado de generación de imágenes.")
+        
+    # Guardar el estado actualizado de envío
+    if guardar_estado_envio(estado_envio):
+        print("Estado de envío actualizado exitosamente.")
+    else:
+        print("Error al guardar el estado de envío.")
+    
+    # Guardar la lista de imágenes generadas en esta sesión
+    try:
+        with open('imagenes_recientes.json', 'w', encoding='utf-8') as f:
+            json.dump(imagenes_generadas, f, indent=4)
+        print(f"Se han registrado {len(imagenes_generadas)} imágenes recientes en imagenes_recientes.json")
+    except Exception as e:
+        print(f"Error al guardar la lista de imágenes recientes: {e}")
+    
+    # Actualizar la lista de comprobación
+    actualizar_lista_comprobacion()
+    
+    print(f"\nProceso completado. {successful} de {len(archivos_pendientes)} archivos fueron convertidos exitosamente.")
 
 
 if __name__ == '__main__':
