@@ -8,6 +8,8 @@ import os
 import random
 import subprocess
 import json
+import zipfile
+import datetime
 
 class VentanaJugador(tk.Toplevel):
     def __init__(self, parent):
@@ -185,6 +187,7 @@ class BingoApp:
             ('Eliminar Jugadores', self.delete_players),
             ('Ver Jugadores', self.ver_cartones),
             ('Generar Cartones', self.generate_cards),
+            ('Generar Cartones img', self.generate_card_images),
             ('Enviar Cartones', self.send_cards),
             ('Jugar Bingo', self.play_bingo),
             ('Borrar Todo', self.borrar_todo)
@@ -230,6 +233,71 @@ class BingoApp:
             messagebox.showinfo("Éxito", mensaje)
         else:
             messagebox.showerror("Error", mensaje)
+            
+    def generate_card_images(self):
+        # Verificar si existen archivos markdown en el directorio de cartones
+        cartones_dir = '/home/juandiego/Documentos/bingo/cartones'
+        md_files = [f for f in os.listdir(cartones_dir) if f.endswith('.md')]
+        
+        if not md_files:
+            messagebox.showerror("Error", "No hay cartones en formato markdown para convertir.")
+            return
+        
+        # Ejecutar el script convertidor_imag.py
+        try:
+            result = subprocess.run(["python", "/home/juandiego/Documentos/bingo/convertidor_imag.py"], 
+                                 capture_output=True, text=True, check=True)
+            
+            # Verificar la salida del script para determinar si fue exitoso
+            if "exitosamente" in result.stdout:
+                # Crear una ventana de diálogo para preguntar si se desean comprimir las imágenes
+                if messagebox.askyesno("Conversión Exitosa", 
+                                    "Los cartones han sido convertidos a imágenes exitosamente.\n\n" +
+                                    "¿Deseas comprimir todas estas imágenes en un archivo ZIP?"):
+                    # Comprimir las imágenes en un archivo ZIP
+                    self.comprimir_imagenes(cartones_dir)
+            else:
+                messagebox.showinfo("Resultado", "Proceso completado. Revisa la terminal para más detalles.")
+                
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Error al convertir cartones: {str(e)}\n\nSalida de error: {e.stderr}")
+            
+    def comprimir_imagenes(self, cartones_dir):
+        # Obtener la fecha actual para el nombre del archivo
+        fecha_actual = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Crear nombre del archivo ZIP
+        zip_filename = f"{cartones_dir}/cartones_img_{fecha_actual}.zip"
+        
+        # Lista para almacenar los archivos PNG
+        png_files = [f for f in os.listdir(cartones_dir) if f.endswith('.png')]
+        
+        if not png_files:
+            messagebox.showerror("Error", "No se encontraron imágenes PNG para comprimir.")
+            return
+        
+        try:
+            # Crear archivo ZIP
+            with zipfile.ZipFile(zip_filename, 'w') as zipf:
+                for png_file in png_files:
+                    png_path = os.path.join(cartones_dir, png_file)
+                    zipf.write(png_path, arcname=png_file)
+            
+            # Preguntar si se desean eliminar las imágenes originales
+            if messagebox.askyesno("Compresión Exitosa", 
+                                "Las imágenes han sido comprimidas exitosamente.\n\n" +
+                                f"Archivo creado: {zip_filename}\n\n" +
+                                "¿Deseas eliminar las imágenes PNG originales?"):
+                # Eliminar las imágenes originales
+                for png_file in png_files:
+                    png_path = os.path.join(cartones_dir, png_file)
+                    os.remove(png_path)
+                messagebox.showinfo("Completado", "Las imágenes originales han sido eliminadas.")
+            
+            messagebox.showinfo("Éxito", f"Proceso completado. Archivo ZIP creado: {zip_filename}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al comprimir las imágenes: {str(e)}")
 
     def send_cards(self):
         # Confirmar antes de enviar
