@@ -261,6 +261,70 @@ class BingoApp:
         else:
             messagebox.showerror("Error", mensaje)
             
+# Clase para mostrar mensajes con scroll
+class VentanaMensajeScroll(tk.Toplevel):
+    def __init__(self, parent, titulo, mensaje, pregunta=None, callback=None):
+        super().__init__(parent)
+        self.title(titulo)
+        self.geometry("600x400")
+        self.minsize(500, 300)  # Tamaño mínimo para asegurar que sea usable
+        
+        # Centrar la ventana
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        
+        # Frame principal
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Área de texto con scroll
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        
+        self.text = tk.Text(text_frame, wrap=tk.WORD, width=60, height=15)
+        scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=self.text.yview)
+        self.text.configure(yscrollcommand=scrollbar.set)
+        
+        self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Insertar el mensaje
+        self.text.insert(tk.END, mensaje)
+        self.text.configure(state='disabled')  # Hacer el texto de solo lectura
+        
+        # Frame para botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Si hay pregunta, mostrar botones Sí/No
+        if pregunta:
+            ttk.Label(button_frame, text=pregunta).pack(pady=(0, 10))
+            ttk.Button(button_frame, text="Sí", command=self.responder_si).pack(side=tk.LEFT, padx=10)
+            ttk.Button(button_frame, text="No", command=self.responder_no).pack(side=tk.LEFT, padx=10)
+            self.callback = callback
+        else:
+            # Si no hay pregunta, solo mostrar botón Aceptar
+            ttk.Button(button_frame, text="Aceptar", command=self.destroy).pack(pady=10)
+        
+        # Hacer la ventana modal
+        self.transient(parent)
+        self.grab_set()
+        self.wait_window()
+    
+    def responder_si(self):
+        if self.callback:
+            self.callback(True)
+        self.destroy()
+    
+    def responder_no(self):
+        if self.callback:
+            self.callback(False)
+        self.destroy()
+
     def generate_card_images(self):
         # Verificar si existen archivos markdown en el directorio de cartones
         cartones_dir = '/home/juandiego/Documentos/bingo/cartones'
@@ -283,18 +347,27 @@ class BingoApp:
         
         if pendientes == 0:
             # Todos los cartones ya tienen imágenes generadas
-            if messagebox.askyesno("Información", 
-                                "Todos los cartones ya tienen imágenes generadas.\n\n" +
-                                "¿Deseas comprimir las imágenes existentes en un archivo ZIP?"):
-                self.comprimir_imagenes(cartones_dir)
+            def callback_comprimir(respuesta):
+                if respuesta:
+                    self.comprimir_imagenes(cartones_dir)
+            
+            VentanaMensajeScroll(self.root, "Información", 
+                              "Todos los cartones ya tienen imágenes generadas.", 
+                              "¿Deseas comprimir las imágenes existentes en un archivo ZIP?",
+                              callback_comprimir)
             return
         
         # Mostrar cuántos cartones se procesarán
-        if not messagebox.askyesno("Confirmación", 
-                               f"Se generarán imágenes para {pendientes} cartones que aún no las tienen.\n\n" +
-                               "¿Deseas continuar?"):
-            return
+        def callback_continuar(respuesta):
+            if respuesta:
+                self.procesar_imagenes(cartones_dir, pendientes)
         
+        VentanaMensajeScroll(self.root, "Confirmación", 
+                          f"Se generarán imágenes para {pendientes} cartones que aún no las tienen.", 
+                          "¿Deseas continuar?",
+                          callback_continuar)
+    
+    def procesar_imagenes(self, cartones_dir, pendientes):
         # Ejecutar el script convertidor_imag.py
         try:
             result = subprocess.run(["python", "/home/juandiego/Documentos/bingo/convertidor_imag.py"], 
@@ -302,17 +375,22 @@ class BingoApp:
             
             # Verificar la salida del script para determinar si fue exitoso
             if "procesarán" in result.stdout:
-                # Crear una ventana de diálogo para preguntar si se desean comprimir las imágenes
-                if messagebox.askyesno("Conversión Exitosa", 
-                                    result.stdout + "\n\n" +
-                                    "¿Deseas comprimir todas estas imágenes en un archivo ZIP?"):
-                    # Comprimir las imágenes en un archivo ZIP
-                    self.comprimir_imagenes(cartones_dir)
+                # Crear una ventana de diálogo con scroll para mostrar el resultado
+                def callback_comprimir(respuesta):
+                    if respuesta:
+                        self.comprimir_imagenes(cartones_dir)
+                
+                VentanaMensajeScroll(self.root, "Conversión Exitosa", 
+                                  result.stdout, 
+                                  "¿Deseas comprimir todas estas imágenes en un archivo ZIP?",
+                                  callback_comprimir)
             else:
-                messagebox.showinfo("Resultado", result.stdout + "\n\nProceso completado. Revisa la terminal para más detalles.")
+                VentanaMensajeScroll(self.root, "Resultado", 
+                                  result.stdout + "\n\nProceso completado. Revisa la terminal para más detalles.")
                 
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Error", f"Error al convertir cartones: {str(e)}\n\nSalida de error: {e.stderr}")
+            VentanaMensajeScroll(self.root, "Error", 
+                              f"Error al convertir cartones: {str(e)}\n\nSalida de error: {e.stderr}")
             
     def comprimir_imagenes(self, cartones_dir):
         # Obtener la fecha actual para el nombre del archivo

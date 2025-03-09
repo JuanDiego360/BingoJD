@@ -43,11 +43,33 @@ def generar_id_carton(num_carton):
     return now.strftime("%m%d%H%M") + num_carton_str
 
 def agregar_jugador(nombre, celular, num_cartones):
-    """Agrega un jugador con sus cartones al diccionario y guarda los datos."""
+    """Agrega un jugador con sus cartones al diccionario y guarda los datos.
+    Si ya existen cartones con el mismo nombre, continúa la secuencia numérica.
+    """
+    # Encontrar el último número de cartón para este nombre
+    ultimo_numero = 0
+    for clave in cartones.keys():
+        if clave.startswith(nombre):
+            # Extraer el número después del nombre
+            partes = clave.split('_')[0]
+            # Obtener la parte numérica después del nombre
+            num_str = ''
+            for char in partes[len(nombre):]:  # Tomar los caracteres después del nombre
+                if char.isdigit():
+                    num_str += char
+                else:
+                    break  # Si encontramos un carácter no numérico, terminamos
+            
+            if num_str and int(num_str) > ultimo_numero:
+                ultimo_numero = int(num_str)
+    
+    # Agregar los nuevos cartones continuando la secuencia
     for i in range(1, num_cartones + 1):
-        id_carton = generar_id_carton(i)
-        clave = f"{nombre}{i}_{id_carton}"
+        num_carton = ultimo_numero + i
+        id_carton = generar_id_carton(i)  # Usar i para el formato del ID (mantiene la secuencia de 01, 02, etc.)
+        clave = f"{nombre}{num_carton}_{id_carton}"
         cartones[clave] = f"+57{celular}"
+    
     # Guardar los datos después de cada actualización
     guardar_datos()
     return cartones
