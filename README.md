@@ -1,6 +1,6 @@
-# Bingo JD - Sistema de Bingo con Integración WhatsApp
+# Bingo JD - Sistema de Bingo
 
-Una aplicación de bingo moderna y completa desarrollada en Python que permite gestionar jugadores, generar cartones únicos y enviarlos automáticamente por WhatsApp. Incluye una interfaz gráfica intuitiva y un sistema de verificación de bingo con síntesis de voz.
+Una aplicación de bingo moderna y completa desarrollada en Python que permite gestionar jugadores y generar cartones únicos. Incluye una interfaz gráfica intuitiva y un sistema de verificación de bingo con síntesis de voz.
 
 ## Características Principales
 
@@ -8,20 +8,16 @@ Una aplicación de bingo moderna y completa desarrollada en Python que permite g
 - 🎲 Generación de cartones únicos de bingo
 - 🖼️ Conversión de cartones a imágenes PNG
 - 📦 Compresión automática de imágenes en archivos ZIP
-- 📱 Envío automático de cartones por WhatsApp
 - 🔊 Síntesis de voz para cantar los números
 - ✅ Sistema de verificación de cartones ganadores
 - 👥 Gestión completa de jugadores
-- 🔄 Estado de envío y verificación de cartones
 - 🔍 Seguimiento del estado de generación de imágenes
 
 ## Requisitos del Sistema
 
 ### Software Base
 - Python 3.12.3 o superior
-- WhatsApp Web (para el envío de cartones)
 - Ubuntu (o distribución Linux similar)
-- Navegador web compatible con WhatsApp Web
 
 ### Dependencias del Sistema
 ```bash
@@ -76,12 +72,10 @@ bingo/
 ├── aplicacion_bingo.py    # Aplicación principal y GUI
 ├── generador_cartones.py  # Generador de cartones únicos
 ├── convertidor_imag.py    # Conversor de cartones a imágenes
-├── whatsapp_sender.py     # Módulo de envío por WhatsApp
 ├── comprobar_carton.py    # Sistema de verificación
 ├── jugadores.py           # Gestión de jugadores
 ├── requirements.txt       # Dependencias del proyecto
 ├── estado_imagenes.json   # Estado de generación de imágenes
-├── estado_envio.json      # Estado de envío de cartones
 ├── comprobar_carton.md    # Lista de comprobación de cartones
 ├── cartones/              # Directorio de cartones generados
 └── cartones/imagenes_de_los_cartones/  # Imágenes PNG de los cartones
@@ -95,18 +89,17 @@ python3 aplicacion_bingo.py
 ```
 
 2. Flujo de trabajo típico:
-   - Añadir jugadores con sus números de WhatsApp
+   - Añadir jugadores
    - Generar cartones únicos para cada jugador
    - Convertir cartones a imágenes PNG (selectivamente según estado)
    - Comprimir imágenes en archivo ZIP para distribución
-   - Enviar cartones por WhatsApp
    - Iniciar el juego de bingo
    - Verificar cartones ganadores
 
 ## Funcionalidades Detalladas
 
 ### Gestión de Jugadores
-- Añadir jugadores con nombre y número de WhatsApp
+- Añadir jugadores con nombre
 - Asignar múltiples cartones a un jugador
 - Eliminar jugadores y sus cartones asociados
 
@@ -125,12 +118,7 @@ python3 aplicacion_bingo.py
 - Generación de archivos ZIP con marcas de tiempo únicas
 - Eliminación de imágenes al borrar jugadores
 
-### Sistema de Envío por WhatsApp
-- Envío automático de cartones
-- Seguimiento del estado de envío
-- Reintento de envíos fallidos
-- Requiere WhatsApp Web activo
-- Opción de enviar imágenes o archivos ZIP
+
 
 ### Juego de Bingo
 - Interfaz intuitiva para el cantador
@@ -139,23 +127,15 @@ python3 aplicacion_bingo.py
 - Historial de números cantados
 
 ## Consideraciones de Seguridad
-- No almacena contraseñas
-- Usa WhatsApp Web para autenticación
-- Mantiene registro de envíos localmente
+- No almacena contraseñas ni datos sensibles
 
 ### Gestión de Estados y Limpieza
 - Seguimiento del estado de generación de imágenes (`estado_imagenes.json`)
-- Seguimiento del estado de envío de cartones (`estado_envio.json`)
 - Función "Borrar Todo" para limpiar todos los datos manteniendo la estructura de directorios
 - Eliminación selectiva de imágenes al eliminar jugadores
 - Registro de imágenes generadas recientemente para compresión selectiva
 
 ## Solución de Problemas
-
-### WhatsApp Web
-- Asegurarse de tener WhatsApp Web abierto y activo
-- Verificar la conexión a internet
-- Mantener la sesión iniciada durante el envío
 
 ### Síntesis de Voz
 - Verificar que sox y libsox-fmt-mp3 estén instalados

@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 import jugadores
 import generador_cartones
-import whatsapp_sender
+
 import os
 import random
 import subprocess
@@ -215,7 +215,6 @@ class BingoApp:
             ('Ver Jugadores', self.ver_cartones),
             ('Generar Cartones', self.generate_cards),
             ('Generar Cartones img', self.generate_card_images),
-            ('Enviar Cartones', self.send_cards),
             ('Jugar Bingo', self.play_bingo),
             ('Borrar Todo', self.borrar_todo)
         ]
@@ -363,104 +362,13 @@ class BingoApp:
         except Exception as e:
             messagebox.showerror("Error", f"Error al comprimir las imágenes: {str(e)}")
 
-    def send_cards(self):
-        # Confirmar antes de enviar
-        if messagebox.askyesno("Confirmar", "¿Estás seguro de enviar los cartones por WhatsApp? \n\nAsegúrate de:\n1. Tener WhatsApp Web abierto\n2. Tener una buena conexión a internet"):
-            print("\nIniciando envío de cartones...")
-            
-            # Cargar estado de envío
-            try:
-                with open('estado_envio.json', 'r', encoding='utf-8') as f:
-                    estado_envio = json.load(f)
-            except FileNotFoundError:
-                estado_envio = {}
-            
-            # Cargar datos de jugadores
-            try:
-                with open('datos_bingo.json', 'r', encoding='utf-8') as f:
-                    datos_jugadores = json.load(f)
-            except FileNotFoundError:
-                messagebox.showerror("Error", "No hay jugadores registrados")
-                return
-            
-            # Obtener lista de cartones no enviados
-            cartones_no_enviados = []
-            for archivo in os.listdir('cartones'):
-                if archivo.endswith('.md'):
-                    clave = archivo[:-3]  # Quitar la extensión .md
-                    if estado_envio.get(clave, "x") == "x" and clave in datos_jugadores:
-                        cartones_no_enviados.append(clave)
-            
-            if not cartones_no_enviados:
-                messagebox.showinfo("Información", "No hay cartones pendientes por enviar")
-                return
-            
-            # Enviar cartones no enviados
-            mensajes_enviados = 0
-            errores = []
-            total_cartones = len(cartones_no_enviados)
-            
-            print(f"\nIniciando envío de {total_cartones} cartones...")
-            
-            for i, carton_id in enumerate(cartones_no_enviados):
-                try:
-                    # Mostrar progreso en la terminal
-                    print(f"Enviando cartón {i+1}/{total_cartones}: {carton_id}")
-                    
-                    # Obtener número de teléfono del jugador
-                    telefono = datos_jugadores[carton_id]
-                    
-                    # Leer contenido del cartón
-                    with open(f'cartones/{carton_id}.md', 'r', encoding='utf-8') as f:
-                        contenido_carton = f.read()
-                    
-                    # Enviar cartón por WhatsApp
-                    if whatsapp_sender.enviar_carton(telefono, contenido_carton, carton_id):
-                        # Marcar como enviado
-                        estado_envio[carton_id] = "✅"
-                        mensajes_enviados += 1
-                        print(f"✅ Cartón {carton_id} enviado exitosamente ({i+1}/{total_cartones})")
-                    else:
-                        errores.append(f"No se pudo enviar el cartón {carton_id}")
-                        print(f"❌ Error al enviar cartón {carton_id} ({i+1}/{total_cartones})")
-                except Exception as e:
-                    errores.append(f"Error al enviar cartón {carton_id}: {str(e)}")
-                    print(f"❌ Error al enviar cartón {carton_id} ({i+1}/{total_cartones}): {str(e)}")
-            
-            # Guardar estado de envío actualizado
-            with open('estado_envio.json', 'w', encoding='utf-8') as f:
-                json.dump(estado_envio, f, indent=4)
-            
-            # Actualizar la lista de comprobación
-            from comprobar_carton import generar_lista_comprobacion
-            generar_lista_comprobacion()
-            
-            # Mostrar resumen en la terminal
-            print(f"\n===== RESUMEN DE ENVÍO =====")
-            print(f"Total de cartones: {total_cartones}")
-            print(f"Cartones enviados: {mensajes_enviados}")
-            print(f"Cartones con error: {len(errores)}")
-            if errores:
-                print("\nErrores encontrados:")
-                for error in errores:
-                    print(f"- {error}")
-            print("============================\n")
-            
-            # Mostrar resumen final
-            if mensajes_enviados > 0:
-                mensaje = f"Se enviaron {mensajes_enviados} cartones exitosamente."
-                if errores:
-                    mensaje += "\n\nErrores encontrados:\n" + "\n".join(errores)
-                messagebox.showinfo("Resumen de envío", mensaje)
-            elif errores:
-                mensaje = "No se pudo enviar ningún cartón.\n\nErrores encontrados:\n" + "\n".join(errores)
-                messagebox.showerror("Error", mensaje)
+
 
     def play_bingo(self):
         # Verificar que haya jugadores
         cartones = jugadores.obtener_cartones()
         if not cartones:
-            messagebox.showerror("Error", "No hay jugadores registrados.\n\nAntes de jugar el bingo, debes:\n1. Añadir jugadores\n2. Generar sus cartones\n3. Enviar los cartones por WhatsApp")
+            messagebox.showerror("Error", "No hay jugadores registrados.\n\nAntes de jugar el bingo, debes:\n1. Añadir jugadores\n2. Generar sus cartones")
             return
         
         # Verificar que todos los cartones estén enviados
@@ -483,7 +391,7 @@ class BingoApp:
                 mensaje = "Hay cartones pendientes por enviar:\n\n"
                 for carton in cartones_no_enviados:
                     mensaje += f"- {carton}\n"
-                mensaje += "\nAntes de jugar el bingo, debes enviar todos los cartones por WhatsApp."
+                mensaje += "\nAntes de jugar el bingo, debes generar todos los cartones."
                 messagebox.showerror("Error", mensaje)
                 return
             
@@ -491,7 +399,7 @@ class BingoApp:
             VentanaJuegoBingo(self.root)
             
         except FileNotFoundError:
-            messagebox.showerror("Error", "No se encontró el archivo de verificación de cartones.\n\nAntes de jugar el bingo, debes:\n1. Añadir jugadores\n2. Generar sus cartones\n3. Enviar los cartones por WhatsApp")
+            messagebox.showerror("Error", "No se encontró el archivo de verificación de cartones.\n\nAntes de jugar el bingo, debes:\n1. Añadir jugadores\n2. Generar sus cartones")
             return
         
     def ver_cartones(self):
