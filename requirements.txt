@@ -1,2 +1,2 @@
 # Paquetes principales
-Pillow==10.2.0  # Para manejo de imágenes
+Pillow  # Para manejo de imágenes
