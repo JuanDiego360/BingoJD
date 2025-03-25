@@ -1,9 +1,2 @@
 # Paquetes principales
 Pillow==10.2.0  # Para manejo de imágenes
-pywhatkit==5.4  # Para envío de mensajes por WhatsApp
-
-# Dependencias adicionales
-pyautogui==0.9.54  # Requerido por pywhatkit
-requests==2.31.0  # Requerido por pywhatkit
-wikipedia==1.4.0  # Requerido por pywhatkit
-mouse==0.7.1  # Requerido por pywhatkit
