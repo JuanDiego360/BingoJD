@@ -75,7 +75,7 @@ def render_table_with_metadata(header, rows, meta, output_file):
     bg_ax.axis('off')
     
     # Cargar y mostrar la imagen de fondo con transparencia incorporada
-    bg_img = mpimg.imread('/home/juandiego/Documentos/bingo/imagen_bingo.jpeg')
+    bg_img = mpimg.imread('./imagen_bingo.jpeg')
     # Aplicar transparencia del 80% (alpha=0.2 significa 20% de opacidad)
     bg_ax.imshow(bg_img, extent=[0, 1, 0, 1], aspect='auto', alpha=0.2, interpolation='bilinear')
     
@@ -164,7 +164,7 @@ def actualizar_lista_comprobacion():
     """Actualiza la lista de comprobación de cartones."""
     try:
         import subprocess
-        result = subprocess.run(["python", "/home/juandiego/Documentos/bingo/comprobar_carton.py"], 
+        result = subprocess.run(["python", "./comprobar_carton.py"], 
                              capture_output=True, text=True)
         if "exitosamente" in result.stdout:
             print("Lista de comprobación actualizada exitosamente.")
@@ -177,8 +177,8 @@ def actualizar_lista_comprobacion():
         return False
 
 def main():
-    input_dir = '/home/juandiego/Documentos/bingo/cartones'
-    output_dir = '/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones'
+    input_dir = './cartones'
+    output_dir = './cartones/imagenes_de_los_cartones'
     
     # Lista para almacenar las imágenes generadas en esta sesión
     imagenes_generadas = []
