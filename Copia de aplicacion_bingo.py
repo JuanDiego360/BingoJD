@@ -43,7 +43,7 @@ class VentanaJugador(tk.Toplevel):
             if not nombre or not celular or num_cartones <= 0:
                 messagebox.showerror("Error", "Por favor complete todos los campos correctamente")
                 return
-                
+            
             if not celular.isdigit():
                 messagebox.showerror("Error", "El número de celular debe contener solo dígitos")
                 return
@@ -831,27 +831,25 @@ class VentanaJuegoBingo(tk.Toplevel):
         # Escribir todo el contenido actualizado
         with open(cartones_jugando, 'w', encoding='utf-8') as f_out:
             f_out.write(contenido_final)
-
+        
         # Ejecutar comando para hablar la balota
-        home = os.path.expanduser('~')
+        def reproducir_audio():
         # comando = f'source {home}/.zshrc && hablar "{letra},{numero}"'
         # comando = f'fish -c \'hablar "{letra},{numero}"\'' #decir la letra
         # Obtener el directorio donde está el script actual
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        if (numero>9):
-            audio_path = os.path.join(script_dir, "voces_bingo", f"{letra}_{numero}.mp3")
-        else:
-            audio_path = os.path.join(script_dir, "voces_bingo", f"{letra}_0{numero}.mp3")
-
-        comando = f'play -q "{audio_path}"'
-        for _ in range(3):
-            subprocess.Popen(comando, shell=True)
-            time.sleep(3) # segundos
-
-
-
-	# Ejecutar audio en hilo separado
-    #threading.Thread(target=reproducir_audio, daemon=True).start()
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            if numero > 9:
+                audio_path = os.path.join(script_dir, "voces_bingo", f"{letra}_{numero}.mp3")
+            else:
+                audio_path = os.path.join(script_dir, "voces_bingo", f"{letra}_0{numero}.mp3")
+            
+            comando = f'play -q "{audio_path}"'
+            for _ in range(3):
+                subprocess.Popen(comando, shell=True)
+                time.sleep(3)
+        
+        # Ejecutar audio en hilo separado
+        threading.Thread(target=reproducir_audio(), daemon=True).start()
 
     def empezar_juego(self):
         """Inicia el juego sacando una balota al azar."""
