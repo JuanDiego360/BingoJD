@@ -1,2 +1,8 @@
-# Paquetes principales
-Pillow  # Para manejo de imágenes
+# Dependencias del sistema (requieren instalación vía apt en Linux):
+# python3-tk, sox, libsox-fmt-mp3, espeak
+
+# Paquetes de Python
+Pillow==12.1.1
+matplotlib==3.10.8
+numpy==2.4.3
+gTTS==2.5.4
