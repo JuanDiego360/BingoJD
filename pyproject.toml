@@ -1,0 +1,33 @@
+[project]
+name = "bingo"
+version = "1.0.0"
+description = "Aplicación de Bingo con interfaz Tkinter"
+authors = [
+    {name = "Juan Diego", email = "juandiego212014@gmail.com"},
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+
+# Dependencias de Python basadas en los imports reales del proyecto:
+dependencies = [
+    "Pillow>=12.1.1",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.3",
+    "gTTS>=2.5.4",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+# Gestión del proyecto con uv.
+# Para sincronizar el entorno ejecuta: uv sync
+# Para añadir una dependencia: uv add <paquete>
+
+[tool.uv.sources]
+# Si hubiera dependencias locales o desde git se declararían aquí.
