@@ -1,2 +1,5 @@
 *.md
 venv/
+./cartones/
+./__pycache__/
+./voces_bingo/
