@@ -7,7 +7,7 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 # Dependencias de Python basadas en los imports reales del proyecto:
 dependencies = [
@@ -25,6 +25,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv]
+package = false
 # Gestión del proyecto con uv.
 # Para sincronizar el entorno ejecuta: uv sync
 # Para añadir una dependencia: uv add <paquete>

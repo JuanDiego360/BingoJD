@@ -176,7 +176,8 @@ class VentanaEliminarJugador(tk.Toplevel):
                 
             # Eliminar la imagen del cartón si existe
             try:
-                imagen_path = f"/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones/{clave_jugador}.png"
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                imagen_path = os.path.join(base_dir, "cartones", "imagenes_de_los_cartones", f"{clave_jugador}.png")
                 if os.path.exists(imagen_path):
                     os.remove(imagen_path)
                     print(f"Imagen del cartón eliminada: {imagen_path}")
@@ -450,16 +451,21 @@ class BingoApp:
         # Confirmar antes de borrar
         if messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los datos?\n\nEsta acción eliminará:\n1. Todos los cartones generados\n2. Todas las imágenes de cartones\n3. Todos los archivos ZIP\n4. Todos los jugadores registrados\n5. El estado de envío y generación de imágenes\n\nEsta acción no se puede deshacer."):
             try:
+                base_dir = os.path.dirname(os.path.abspath(__file__))
                 # 1. Borrar todos los archivos en el directorio cartones (excepto directorios)
-                cartones_dir = '/home/juandiego/Documentos/bingo/cartones'
-                for archivo in os.listdir(cartones_dir):
-                    ruta_archivo = os.path.join(cartones_dir, archivo)
-                    if os.path.isfile(ruta_archivo):
-                        os.remove(ruta_archivo)
-                        print(f"Archivo eliminado: {ruta_archivo}")
-                
+                cartones_dir = os.path.join(base_dir, 'cartones')
+                if os.path.isdir(cartones_dir):
+                    for archivo in os.listdir(cartones_dir):
+                        ruta_archivo = os.path.join(cartones_dir, archivo)
+                        if os.path.isfile(ruta_archivo):
+                            os.remove(ruta_archivo)
+                            print(f"Archivo eliminado: {ruta_archivo}")
+                else:
+                    os.makedirs(cartones_dir, exist_ok=True)
+                    print(f"Directorio creado: {cartones_dir}")
+
                 # 2. Borrar todas las imágenes de cartones (conservando el directorio)
-                imagenes_dir = '/home/juandiego/Documentos/bingo/cartones/imagenes_de_los_cartones'
+                imagenes_dir = os.path.join(cartones_dir, 'imagenes_de_los_cartones')
                 try:
                     # Crear el directorio si no existe
                     if not os.path.exists(imagenes_dir):
@@ -477,23 +483,23 @@ class BingoApp:
                     print(f"Error al procesar directorio de imágenes: {str(e)}")
                 
                 # 3. Limpiar datos_bingo.json (crear un archivo vacío con un diccionario)
-                with open('/home/juandiego/Documentos/bingo/datos_bingo.json', 'w', encoding='utf-8') as f:
+                with open(os.path.join(base_dir, 'datos_bingo.json'), 'w', encoding='utf-8') as f:
                     json.dump({}, f, ensure_ascii=False, indent=4)
                 
                 # 4. Limpiar estado_envio.json (crear un archivo vacío con un diccionario)
-                with open('/home/juandiego/Documentos/bingo/estado_envio.json', 'w', encoding='utf-8') as f:
+                with open(os.path.join(base_dir, 'estado_envio.json'), 'w', encoding='utf-8') as f:
                     json.dump({}, f, ensure_ascii=False, indent=4)
                     
                 # 5. Limpiar estado_imagenes.json (crear un archivo vacío con un diccionario)
                 try:
-                    with open('/home/juandiego/Documentos/bingo/estado_imagenes.json', 'w', encoding='utf-8') as f:
+                    with open(os.path.join(base_dir, 'estado_imagenes.json'), 'w', encoding='utf-8') as f:
                         json.dump({}, f, ensure_ascii=False, indent=4)
                 except Exception as e:
                     print(f"Error al limpiar estado_imagenes.json: {str(e)}")
                     
                 # 6. Limpiar imagenes_recientes.json si existe
                 try:
-                    with open('/home/juandiego/Documentos/bingo/imagenes_recientes.json', 'w', encoding='utf-8') as f:
+                    with open(os.path.join(base_dir, 'imagenes_recientes.json'), 'w', encoding='utf-8') as f:
                         json.dump([], f, indent=4)
                 except Exception as e:
                     print(f"Error al limpiar imagenes_recientes.json: {str(e)}")
