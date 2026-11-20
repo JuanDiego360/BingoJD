@@ -75,7 +75,10 @@ def render_table_with_metadata(header, rows, meta, output_file):
     bg_ax.axis('off')
     
     # Cargar y mostrar la imagen de fondo con transparencia incorporada
-    bg_img = mpimg.imread('./iglesia_toledo.jpeg')
+    from PIL import Image
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ruta_fondo = os.path.join(base_dir, 'imagenCarton.webp')
+    bg_img = np.asarray(Image.open(ruta_fondo).convert('RGB'))
     # Aplicar transparencia del 80% (alpha=0.2 significa 20% de opacidad)
     bg_ax.imshow(bg_img, extent=[0, 1, 0, 1], aspect='auto', alpha=0.2, interpolation='bilinear')
     
