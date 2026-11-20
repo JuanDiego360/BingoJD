@@ -12,6 +12,43 @@ import subprocess
 import json
 import zipfile
 import datetime
+import shutil
+
+def reproducir_audio(audio_path, repetir=1, intervalo=1):
+    """Reproduce un archivo de audio usando el reproductor disponible (mpg123, mpv, ffplay, play, pw-play, paplay)."""
+    if not os.path.exists(audio_path):
+        print(f"Archivo de audio no encontrado: {audio_path}")
+        return
+
+    # Determinar el comando reproductor disponible
+    if shutil.which("mpg123"):
+        cmd = ["mpg123", "-q"]
+    elif shutil.which("mpv"):
+        cmd = ["mpv", "--no-video", "--really-quiet"]
+    elif shutil.which("ffplay"):
+        cmd = ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"]
+    elif shutil.which("play"):
+        cmd = ["play", "-q"]
+    elif shutil.which("pw-play"):
+        cmd = ["pw-play"]
+    elif shutil.which("paplay"):
+        cmd = ["paplay"]
+    else:
+        print("No se encontró ningún reproductor de audio instalado (mpg123, mpv, ffplay, play).")
+        return
+
+    def _play_worker():
+        for i in range(repetir):
+            try:
+                proc = subprocess.Popen(cmd + [audio_path])
+                proc.wait()
+            except Exception as e:
+                print(f"Error al reproducir audio: {e}")
+                break
+            if i < repetir - 1 and intervalo > 0:
+                time.sleep(intervalo)
+
+    threading.Thread(target=_play_worker, daemon=True).start()
 
 class VentanaJugador(tk.Toplevel):
     def __init__(self, parent):
@@ -543,8 +580,12 @@ class VentanaSeleccionCarton(tk.Toplevel):
         self.grab_set()
     
     def cargar_cartones(self):
-        cartones_dir = os.path.join(os.getcwd(), 'cartones')
-        self.cartones = [f.split('.')[0] for f in os.listdir(cartones_dir) if f.endswith('.md')]
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        cartones_dir = os.path.join(base_dir, 'cartones')
+        if os.path.exists(cartones_dir):
+            self.cartones = [f.split('.')[0] for f in os.listdir(cartones_dir) if f.endswith('.md')]
+        else:
+            self.cartones = []
         self.combo_cartones['values'] = self.cartones
         if self.cartones:
             self.combo_cartones.set(self.cartones[0])
@@ -613,7 +654,8 @@ class VentanaVerificacionBingo(tk.Toplevel):
         ttk.Button(btn_frame, text="Incorrecto", command=self.bingo_incorrecto).pack(side=tk.LEFT, padx=10)
     
     def cargar_carton(self, carton_id):
-        cartones_jugando = os.path.join(os.getcwd(), 'cartonesjugando.md')
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        cartones_jugando = os.path.join(base_dir, 'cartonesjugando.md')
         try:
             with open(cartones_jugando, 'r', encoding='utf-8') as f:
                 contenido = f.read()
@@ -663,23 +705,15 @@ class VentanaVerificacionBingo(tk.Toplevel):
             print(f"Error al cargar el cartón: {e}")
     
     def bingo_correcto(self):
-        # comando = f'source {os.path.expanduser("~")}/.zshrc && hablar "El Bingo ha sido correcto, ¡felicitaciones al ganador!"'
-        # comando = 'play -q /voces_bingo/felicidades_ganador.mp3'
-        # Obtener el directorio donde está el script actual
         script_dir = os.path.dirname(os.path.abspath(__file__))
         audio_path = os.path.join(script_dir, "voces_bingo", "felicidades_ganador.mp3")
-        comando = f'play -q "{audio_path}"'
-        subprocess.Popen(comando, shell=True)
+        reproducir_audio(audio_path)
         self.destroy()
     
     def bingo_incorrecto(self):
-        # comando = f'source {os.path.expanduser("~")}/.zshrc && hablar "El bingo no es válido, seguimos jugando"'
-        # comando = 'play -q /voces_bingo/elbingonoesvalido.mp3'
-        # Obtener el directorio donde está el script actual
         script_dir = os.path.dirname(os.path.abspath(__file__))
         audio_path = os.path.join(script_dir, "voces_bingo", "elbingonoesvalido.mp3")
-        comando = f'play -q "{audio_path}"'
-        subprocess.Popen(comando, shell=True)
+        reproducir_audio(audio_path)
         self.destroy()
 
 class VentanaJuegoBingo(tk.Toplevel):
@@ -806,8 +840,9 @@ class VentanaJuegoBingo(tk.Toplevel):
             self.numeros_sacados.append(numero)
         
         # Crear/Actualizar archivo cartonesjugando.md con todos los cartones
-        cartones_dir = os.path.join(os.getcwd(), 'cartones')
-        cartones_jugando = os.path.join(os.getcwd(), 'cartonesjugando.md')
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        cartones_dir = os.path.join(base_dir, 'cartones')
+        cartones_jugando = os.path.join(base_dir, 'cartonesjugando.md')
         
         contenido_final = ""
         
@@ -838,10 +873,6 @@ class VentanaJuegoBingo(tk.Toplevel):
         with open(cartones_jugando, 'w', encoding='utf-8') as f_out:
             f_out.write(contenido_final)
 
-        # Ejecutar comando para hablar la balota
-        home = os.path.expanduser('~')
-        # comando = f'source {home}/.zshrc && hablar "{letra},{numero}"'
-        # comando = f'fish -c \'hablar "{letra},{numero}"\'' #decir la letra
         # Obtener el directorio donde está el script actual
         script_dir = os.path.dirname(os.path.abspath(__file__))
         if (numero>9):
@@ -849,15 +880,7 @@ class VentanaJuegoBingo(tk.Toplevel):
         else:
             audio_path = os.path.join(script_dir, "voces_bingo", f"{letra}_0{numero}.mp3")
 
-        comando = f'play -q "{audio_path}"'
-        for _ in range(3):
-            subprocess.Popen(comando, shell=True)
-            time.sleep(3) # segundos
-
-
-
-	# Ejecutar audio en hilo separado
-    #threading.Thread(target=reproducir_audio, daemon=True).start()
+        reproducir_audio(audio_path, repetir=3, intervalo=1)
 
     def empezar_juego(self):
         """Inicia el juego sacando una balota al azar."""
@@ -892,15 +915,10 @@ class VentanaJuegoBingo(tk.Toplevel):
         
     def verificar_bingo(self):
         """Inicia el proceso de verificación de bingo."""
-        # Anunciar que han cantado bingo
-        # comando = f'source {os.path.expanduser("~")}/.zshrc && hablar "Han cantado Bingo!"'
-        # comando = f'fish -c \'hablar "Han cantado Bingo!"\''
         # Obtener el directorio donde está el script actual
         script_dir = os.path.dirname(os.path.abspath(__file__))
         audio_path = os.path.join(script_dir, "voces_bingo", "cantaronbingo.mp3")
-
-        comando = f'play -q "{audio_path}"'
-        subprocess.Popen(comando, shell=True)
+        reproducir_audio(audio_path)
         
         # Mostrar ventana de selección de cartón
         VentanaSeleccionCarton(self)
@@ -924,20 +942,27 @@ class VentanaJuegoBingo(tk.Toplevel):
             self.botones["Empezar"].configure(state='normal')
             self.botones["Siguiente"].configure(state='disabled')
             
-            # Restaurar cartonesjugando.md desde cartones.md
-            cartones_jugando = os.path.join(os.getcwd(), 'cartonesjugando.md')
-            cartones_original = os.path.join(os.getcwd(), 'cartones.md')
+            # Restaurar cartonesjugando.md limpio desde los archivos en cartones/
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            cartones_dir = os.path.join(base_dir, 'cartones')
+            cartones_jugando = os.path.join(base_dir, 'cartonesjugando.md')
             
             try:
-                # Copiar el contenido original
-                with open(cartones_original, 'r', encoding='utf-8') as f_original:
-                    contenido_original = f_original.read()
+                contenido_final = ""
+                if os.path.exists(cartones_dir):
+                    for filename in sorted(os.listdir(cartones_dir)):
+                        if filename.endswith('.md'):
+                            file_path = os.path.join(cartones_dir, filename)
+                            nombre = os.path.splitext(filename)[0]
+                            with open(file_path, 'r', encoding='utf-8') as f_in:
+                                contenido = f_in.read()
+                            contenido_final += f'## {nombre}\n'
+                            contenido_final += f'{contenido}\n\n'
+                
                 with open(cartones_jugando, 'w', encoding='utf-8') as f_jugando:
-                    f_jugando.write(contenido_original)
+                    f_jugando.write(contenido_final)
                 
-                # Anunciar reinicio
-                subprocess.run(['fish', '-c', 'hablar "El juego ha sido reiniciado"'])
-                
+                messagebox.showinfo("Éxito", "El juego ha sido reiniciado correctamente.")
             except Exception as e:
                 messagebox.showerror("Error", f"Error al reiniciar el juego: {e}")
 
